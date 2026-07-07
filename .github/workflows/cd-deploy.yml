@@ -1,0 +1,100 @@
+name: CD Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches: [develop, main]
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    name: Deploy to EKS
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      cluster: ${{ steps.target.outputs.cluster }}
+      namespace: ${{ steps.target.outputs.namespace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GHA_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine target cluster/namespace
+        id: target
+        run: |
+          if [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+            echo "cluster=ecom-prod-eks" >> "$GITHUB_OUTPUT"
+            echo "namespace=ecom-prod" >> "$GITHUB_OUTPUT"
+          else
+            echo "cluster=ecom-dev-eks" >> "$GITHUB_OUTPUT"
+            echo "namespace=ecom-dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ steps.target.outputs.cluster }} --region ${{ env.AWS_REGION }}
+
+      - name: Deploy services (rolling update)
+        run: |
+          for svc in product-service cart-service inventory-service order-service notification-service admin-service api-gateway frontend; do
+            kubectl set image deployment/$svc $svc=<account_id>.dkr.ecr.us-east-1.amazonaws.com/$svc:${{ github.event.workflow_run.head_sha }} \
+              -n ${{ steps.target.outputs.namespace }} || true
+            kubectl rollout status deployment/$svc -n ${{ steps.target.outputs.namespace }} --timeout=180s
+          done
+
+      - name: Smoke Test
+        run: |
+          for svc_path in product-service:5001 cart-service:5002 inventory-service:5003 order-service:5004 notification-service:5005; do
+            svc=$(echo "$svc_path" | cut -d: -f1)
+            kubectl run smoke-test-$svc --rm -i --restart=Never --image=curlimages/curl -n ${{ steps.target.outputs.namespace }} -- \
+              curl -sf http://$svc.${{ steps.target.outputs.namespace }}.svc.cluster.local/health
+          done
+
+      - name: Rollback on Failure
+        if: failure()
+        run: |
+          for svc in product-service cart-service inventory-service order-service notification-service admin-service api-gateway frontend; do
+            kubectl rollout undo deployment/$svc -n ${{ steps.target.outputs.namespace }} || true
+          done
+
+  dast:
+    name: DAST — OWASP ZAP Baseline Scan
+    needs: deploy
+    if: needs.deploy.outputs.namespace == 'ecom-dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GHA_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ needs.deploy.outputs.cluster }} --region ${{ env.AWS_REGION }}
+
+      - name: Resolve dev Ingress URL
+        id: url
+        run: |
+          HOST=$(kubectl get ingress ecom-ingress -n ${{ needs.deploy.outputs.namespace }} \
+            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "target=http://$HOST" >> "$GITHUB_OUTPUT"
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ steps.url.outputs.target }}
+          cmd_options: '-a'
+          fail_action: true    # fails the job on WARN/FAIL alerts — tune once a baseline is established
+
+      - name: Upload ZAP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: report_html.html

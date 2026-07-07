@@ -1,0 +1,49 @@
+{% extends 'admin/base.html' %}
+{% block title %}الطلبات{% endblock %}
+{% block page_title %}إدارة الطلبات{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-shopping-bag"></i> الطلبات ({{ orders.total }})</span>
+    <div style="display:flex;gap:8px;">
+      <a href="/admin/orders" class="btn btn-sm {{ 'btn-primary' if not status else 'btn-outline' }}">الكل</a>
+      <a href="/admin/orders?status=pending" class="btn btn-sm {{ 'btn-warning' if status == 'pending' else 'btn-outline' }}">معلق</a>
+      <a href="/admin/orders?status=completed" class="btn btn-sm {{ 'btn-success' if status == 'completed' else 'btn-outline' }}">مكتمل</a>
+      <a href="/admin/orders?status=cancelled" class="btn btn-sm {{ 'btn-danger' if status == 'cancelled' else 'btn-outline' }}">ملغي</a>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>المستخدم</th><th>الإجمالي</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th></tr></thead>
+      <tbody>
+        {% for order in orders.items %}
+        <tr>
+          <td>#{{ order.id }}</td>
+          <td>{{ order.user.name if order.user else 'مجهول' }}<br><small style="color:var(--muted)">{{ order.user.email if order.user else '' }}</small></td>
+          <td>{{ "%.2f"|format(order.total) }} ج.م</td>
+          <td>
+            {% if order.status == 'completed' %}<span class="badge badge-success">مكتمل</span>
+            {% elif order.status == 'pending' %}<span class="badge badge-warning">معلق</span>
+            {% elif order.status == 'cancelled' %}<span class="badge badge-danger">ملغي</span>
+            {% else %}<span class="badge badge-info">{{ order.status }}</span>{% endif %}
+          </td>
+          <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}</td>
+          <td><a href="/admin/orders/{{ order.id }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i> تفاصيل</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);">لا توجد طلبات</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if orders.pages > 1 %}
+  <div class="pagination">
+    {% for page in orders.iter_pages() %}
+      {% if page %}
+        <a href="?page={{ page }}&status={{ status }}" class="page-link {% if page == orders.page %}active{% endif %}">{{ page }}</a>
+      {% else %}<span class="page-link">...</span>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
