@@ -9,6 +9,17 @@ module "vpc" {
   data_subnet_cidrs     = ["10.0.21.0/24", "10.0.22.0/24"]
 }
 
+module "eks" {
+  source               = "../../modules/eks"
+  cluster_name         = "${var.project}-${var.environment}-eks"
+  vpc_id               = module.vpc.vpc_id
+  subnet_ids           = module.vpc.private_subnet_ids
+  node_instance_types  = var.node_instance_types
+  node_desired_size    = 2
+  node_min_size        = 2
+  node_max_size        = 4
+}
+
 module "iam" {
   source            = "../../modules/iam"
   project           = var.project
@@ -16,18 +27,8 @@ module "iam" {
   github_org        = var.github_org
   github_repo       = var.github_repo
   oidc_provider_arn = module.eks.oidc_provider_arn
-  oidc_provider_url = replace(module.eks.cluster_endpoint, "https://", "")
-}
-
-module "eks" {
-  source             = "../../modules/eks"
-  cluster_name       = "${var.project}-${var.environment}-eks"
-  vpc_id             = module.vpc.vpc_id
-  subnet_ids         = module.vpc.private_subnet_ids
-  node_instance_type = "t3.medium"
-  node_desired_size  = 4
-  node_min_size      = 2
-  node_max_size      = 5
+  # The real OIDC issuer URL, not the API server endpoint.
+  oidc_provider_url = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
 }
 
 module "ecr" {
@@ -40,7 +41,8 @@ module "rds" {
   environment                = var.environment
   vpc_id                     = module.vpc.vpc_id
   subnet_ids                 = module.vpc.data_subnet_ids
-  allowed_security_group_ids = [module.eks.cluster_name != "" ? module.eks.cluster_name : ""]
+  # Real security group ID (sg-xxxxxxxxxxxxxxxxx), not the cluster's name.
+  allowed_security_group_ids = [module.eks.node_security_group_id]
   multi_az                   = false
 }
 
@@ -50,7 +52,7 @@ module "redis" {
   environment                = var.environment
   vpc_id                     = module.vpc.vpc_id
   subnet_ids                 = module.vpc.data_subnet_ids
-  allowed_security_group_ids = [module.eks.cluster_name != "" ? module.eks.cluster_name : ""]
+  allowed_security_group_ids = [module.eks.node_security_group_id]
 }
 
 module "s3" {
@@ -59,7 +61,11 @@ module "s3" {
   environment = var.environment
 }
 
+# Route 53 + ACM are entirely optional. When disabled (the dev default),
+# CloudFront is provisioned below using its own default certificate and no
+# custom domain, and no hosted zone / certificate is created at all.
 module "route53" {
+  count                  = var.enable_route53 ? 1 : 0
   source                 = "../../modules/route53"
   domain_name            = var.domain_name
   cloudfront_domain_name = module.cloudfront.distribution_domain_name
@@ -69,11 +75,11 @@ module "route53" {
 }
 
 module "cloudfront" {
-  source                       = "../../modules/cloudfront"
-  project                      = var.project
-  environment                  = var.environment
-  alb_dns_name                 = "PLACEHOLDER-set-after-alb-controller-provisions-alb"
-  static_assets_bucket_domain  = "${module.s3.static_assets_bucket}.s3.amazonaws.com"
-  acm_certificate_arn          = module.route53.certificate_arn
-  domain_aliases               = [var.domain_name]
+  source                      = "../../modules/cloudfront"
+  project                     = var.project
+  environment                 = var.environment
+  alb_dns_name                = "PLACEHOLDER-set-after-alb-controller-provisions-alb"
+  static_assets_bucket_domain = "${module.s3.static_assets_bucket}.s3.amazonaws.com"
+  acm_certificate_arn         = var.enable_route53 ? module.route53[0].certificate_arn : ""
+  domain_aliases              = var.enable_route53 ? [var.domain_name] : []
 }

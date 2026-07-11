@@ -1,8 +1,20 @@
 variable "project" { type = string }
 variable "environment" { type = string }
 
+# S3 bucket names must be globally unique across ALL AWS accounts, not just
+# this one. Suffixing with the account ID (itself globally unique) guarantees
+# no collision with any other AWS customer's bucket, without hardcoding any
+# account-specific value into the module.
+data "aws_caller_identity" "current" {}
+
+locals {
+  account_id           = data.aws_caller_identity.current.account_id
+  static_assets_bucket = "${var.project}-${var.environment}-static-assets-${local.account_id}"
+  alb_logs_bucket      = "${var.project}-${var.environment}-alb-logs-${local.account_id}"
+}
+
 resource "aws_s3_bucket" "static_assets" {
-  bucket = "${var.project}-${var.environment}-static-assets"
+  bucket = local.static_assets_bucket
 }
 
 resource "aws_s3_bucket_public_access_block" "static_assets" {
@@ -26,7 +38,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "static_assets" {
 }
 
 resource "aws_s3_bucket" "alb_logs" {
-  bucket = "${var.project}-${var.environment}-alb-logs"
+  bucket = local.alb_logs_bucket
 }
 
 resource "aws_s3_bucket_public_access_block" "alb_logs" {

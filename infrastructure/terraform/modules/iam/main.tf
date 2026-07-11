@@ -3,6 +3,11 @@ variable "environment" { type = string }
 variable "github_org" { type = string }
 variable "github_repo" { type = string }
 variable "oidc_provider_arn" { type = string }
+
+# Must be the EKS cluster's real OIDC ISSUER URL with the "https://" prefix
+# stripped (e.g. "oidc.eks.us-east-1.amazonaws.com/id/XXXXXXXX") — this is
+# module.eks.cluster_oidc_issuer_url from the eks module, NOT its API server
+# cluster_endpoint. Passing the wrong URL silently breaks IRSA trust matching.
 variable "oidc_provider_url" { type = string }
 
 data "aws_iam_policy_document" "github_actions_assume" {

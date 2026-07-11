@@ -2,17 +2,32 @@ variable "project" { type = string }
 variable "environment" { type = string }
 variable "alb_dns_name" { type = string }
 variable "static_assets_bucket_domain" { type = string }
-variable "acm_certificate_arn" { type = string }
+
+# Empty string (the default) means "no custom domain yet" — the distribution
+# falls back to CloudFront's own default certificate and *.cloudfront.net
+# domain name. Only pass a real ACM certificate ARN once Route 53/ACM are
+# enabled and the certificate has actually validated (see modules/route53).
+variable "acm_certificate_arn" {
+  type    = string
+  default = ""
+}
 variable "domain_aliases" {
   type    = list(string)
   default = []
 }
 
+locals {
+  use_custom_domain = var.acm_certificate_arn != ""
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled         = true
   is_ipv6_enabled = true
-  aliases         = var.domain_aliases
-  comment         = "${var.project}-${var.environment} CDN"
+  # CloudFront rejects any alias unless a matching custom (non-default)
+  # certificate is also configured, so aliases must stay empty until a real
+  # ACM certificate exists.
+  aliases = local.use_custom_domain ? var.domain_aliases : []
+  comment = "${var.project}-${var.environment} CDN"
 
   origin {
     domain_name = var.alb_dns_name
@@ -68,9 +83,10 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = var.acm_certificate_arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+    cloudfront_default_certificate = !local.use_custom_domain
+    acm_certificate_arn            = local.use_custom_domain ? var.acm_certificate_arn : null
+    ssl_support_method             = local.use_custom_domain ? "sni-only" : null
+    minimum_protocol_version       = local.use_custom_domain ? "TLSv1.2_2021" : null
   }
 }
 
