@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: inventory-service
-          image: <account_id>.dkr.ecr.us-east-1.amazonaws.com/inventory-service:GIT_SHA
+          image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/inventory-service:latest
           ports:
             - containerPort: 5003
           envFrom:

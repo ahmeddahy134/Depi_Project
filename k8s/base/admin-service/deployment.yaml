@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: admin-service
-          image: <account_id>.dkr.ecr.us-east-1.amazonaws.com/admin-service:GIT_SHA
+          image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/admin-service:latest
           ports:
             - containerPort: 5010
           envFrom:

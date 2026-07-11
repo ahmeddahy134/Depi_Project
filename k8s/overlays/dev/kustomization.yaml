@@ -10,3 +10,12 @@ patches:
         value: 1
     target:
       kind: Deployment
+  - patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 1
+    target:
+      kind: HorizontalPodAutoscaler

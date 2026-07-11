@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: <account_id>.dkr.ecr.us-east-1.amazonaws.com/notification-service:GIT_SHA
+          image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/notification-service:latest
           ports:
             - containerPort: 5005
           envFrom:

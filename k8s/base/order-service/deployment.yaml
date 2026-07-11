@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: <account_id>.dkr.ecr.us-east-1.amazonaws.com/order-service:GIT_SHA
+          image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/order-service:latest
           ports:
             - containerPort: 5004
           envFrom:

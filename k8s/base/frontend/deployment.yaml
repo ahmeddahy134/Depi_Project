@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: <account_id>.dkr.ecr.us-east-1.amazonaws.com/frontend:GIT_SHA
+          image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
           ports:
             - containerPort: 80
           resources:
