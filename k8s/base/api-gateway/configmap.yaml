@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+  namespace: ecom-dev
+data:
+  PORT: "8080"
+  # Short (namespace-relative) service names, not a hardcoded
+  # "<svc>.ecom-prod.svc.cluster.local" FQDN. Kubernetes DNS resolves a bare
+  # service name to the service in the pod's own namespace, so this same
+  # ConfigMap works unmodified whether kustomize renders it into ecom-dev or
+  # ecom-prod — no per-environment patch needed. (Previously this was
+  # hardcoded to ecom-prod, which would have silently broken every
+  # api-gateway -> microservice call once deployed into ecom-dev.)
+  PRODUCT_SERVICE_URL: "http://product-service"
+  CART_SERVICE_URL: "http://cart-service"
+  INVENTORY_SERVICE_URL: "http://inventory-service"
+  ORDER_SERVICE_URL: "http://order-service"
+  NOTIFICATION_SERVICE_URL: "http://notification-service"

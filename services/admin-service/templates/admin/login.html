@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>تسجيل دخول الأدمن — TechnoZone</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#0d1117;color:#e0e0e0;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+    .login-card{background:#16213e;border:1px solid #2a2a4a;border-radius:16px;padding:40px;width:100%;max-width:400px;}
+    .brand{text-align:center;margin-bottom:30px;}
+    .brand h1{font-size:1.8rem;color:#0d6efd;font-weight:700;}
+    .brand p{color:#9e9e9e;font-size:.9rem;margin-top:5px;}
+    .form-group{margin-bottom:18px;}
+    .form-label{display:block;margin-bottom:6px;font-size:.85rem;color:#9e9e9e;}
+    .form-control{width:100%;background:#0d1117;border:1px solid #2a2a4a;color:#e0e0e0;padding:11px 14px;border-radius:8px;font-size:.9rem;outline:none;transition:.2s;}
+    .form-control:focus{border-color:#0d6efd;}
+    .btn-login{width:100%;background:#0d6efd;color:#fff;border:none;padding:12px;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:.2s;}
+    .btn-login:hover{background:#0a58ca;}
+    .alert{padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:.85rem;background:rgba(220,53,69,.15);border:1px solid rgba(220,53,69,.3);color:#ff6b6b;}
+    .icon-wrap{width:64px;height:64px;background:rgba(13,110,253,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:1.8rem;color:#0d6efd;}
+  </style>
+</head>
+<body>
+<div class="login-card">
+  <div class="brand">
+    <div class="icon-wrap"><i class="fas fa-shield-alt"></i></div>
+    <h1>⚡ TechnoZone</h1>
+    <p>لوحة تحكم الأدمن</p>
+  </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert"><i class="fas fa-exclamation-circle"></i> {{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  <form method="POST" action="/admin/login">
+    <div class="form-group">
+      <label class="form-label">البريد الإلكتروني</label>
+      <input type="email" name="email" class="form-control" placeholder="admin@technozone.com" required/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">كلمة المرور</label>
+      <input type="password" name="password" class="form-control" placeholder="••••••••" required/>
+    </div>
+    <button type="submit" class="btn-login">
+      <i class="fas fa-sign-in-alt"></i> دخول
+    </button>
+  </form>
+</div>
+</body>
+</html>

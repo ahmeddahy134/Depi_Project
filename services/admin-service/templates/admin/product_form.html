@@ -1,0 +1,61 @@
+{% extends 'admin/base.html' %}
+{% block title %}{{ 'تعديل منتج' if action == 'edit' else 'إضافة منتج' }}{% endblock %}
+{% block page_title %}{{ 'تعديل منتج' if action == 'edit' else 'إضافة منتج جديد' }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:700px;">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-box"></i> {{ 'تعديل' if action == 'edit' else 'إضافة' }} منتج</span>
+    <a href="/admin/products" class="btn btn-outline btn-sm"><i class="fas fa-arrow-right"></i> رجوع</a>
+  </div>
+  <form method="POST">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">اسم المنتج *</label>
+        <input type="text" name="name" class="form-control" value="{{ product.name if product else '' }}" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">السعر (ج.م) *</label>
+        <input type="number" name="price" class="form-control" step="0.01" value="{{ product.price if product else '' }}" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الفئة</label>
+        <select name="category_id" class="form-control">
+          <option value="">-- بدون فئة --</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">رابط الصورة</label>
+        <input type="url" name="image" class="form-control" value="{{ product.image if product else '' }}" placeholder="https://..."/>
+      </div>
+      {% if product and product.image %}
+      <div style="grid-column:1/-1;margin-bottom:10px;">
+        <img src="{{ product.image }}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"/>
+      </div>
+      {% endif %}
+      <div class="form-group">
+        <label class="form-label">التقييم (0-5)</label>
+        <input type="number" name="rating" class="form-control" min="0" max="5" value="{{ product.rating if product else 0 }}"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الشارة</label>
+        <input type="text" name="badge" class="form-control" value="{{ product.badge if product and product.badge else '' }}" placeholder="الأكثر مبيعاً، جديد..."/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">المخزون</label>
+        <input type="number" name="stock" class="form-control" value="{{ product.stock if product else 0 }}"/>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">الوصف</label>
+        <textarea name="description" class="form-control" rows="4" placeholder="وصف المنتج...">{{ product.description if product and product.description else '' }}</textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px;">
+      <a href="/admin/products" class="btn btn-outline">إلغاء</a>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

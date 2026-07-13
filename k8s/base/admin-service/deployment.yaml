@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service
+  namespace: ecom-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: admin-service }
+  template:
+    metadata:
+      labels: { app: admin-service }
+    spec:
+      containers:
+        - name: admin-service
+          image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/admin-service:latest
+          ports:
+            - containerPort: 5010
+          envFrom:
+            - configMapRef: { name: admin-service-config }
+            - secretRef: { name: admin-service-secrets }
+          readinessProbe:
+            httpGet: { path: /health, port: 5010 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 5010 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }

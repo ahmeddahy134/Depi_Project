@@ -1,0 +1,72 @@
+{% extends 'admin/base.html' %}
+{% block title %}لوحة التحكم{% endblock %}
+{% block page_title %}لوحة التحكم{% endblock %}
+{% block content %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+    <div class="stat-info"><h3>{{ stats.users }}</h3><p>المستخدمون</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-box"></i></div>
+    <div class="stat-info"><h3>{{ stats.products }}</h3><p>المنتجات</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon yellow"><i class="fas fa-shopping-bag"></i></div>
+    <div class="stat-info"><h3>{{ stats.orders }}</h3><p>الطلبات</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fas fa-clock"></i></div>
+    <div class="stat-info"><h3>{{ stats.pending_orders }}</h3><p>طلبات معلقة</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple"><i class="fas fa-pound-sign"></i></div>
+    <div class="stat-info"><h3>{{ "%.0f"|format(stats.revenue) }}</h3><p>الإيرادات (ج.م)</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon teal"><i class="fas fa-tags"></i></div>
+    <div class="stat-info"><h3>{{ stats.categories }}</h3><p>الفئات</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-ticket-alt"></i></div>
+    <div class="stat-info"><h3>{{ stats.coupons }}</h3><p>كوبونات نشطة</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-envelope"></i></div>
+    <div class="stat-info"><h3>{{ stats.newsletters }}</h3><p>مشتركو النشرة</p></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-shopping-bag"></i> أحدث الطلبات</span>
+    <a href="/admin/orders" class="btn btn-outline btn-sm">عرض الكل</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>المستخدم</th><th>الإجمالي</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th></tr>
+      </thead>
+      <tbody>
+        {% for order in recent_orders %}
+        <tr>
+          <td>#{{ order.id }}</td>
+          <td>{{ order.user.name if order.user else 'مجهول' }}</td>
+          <td>{{ "%.2f"|format(order.total) }} ج.م</td>
+          <td>
+            {% if order.status == 'completed' %}<span class="badge badge-success">مكتمل</span>
+            {% elif order.status == 'pending' %}<span class="badge badge-warning">معلق</span>
+            {% elif order.status == 'cancelled' %}<span class="badge badge-danger">ملغي</span>
+            {% else %}<span class="badge badge-info">{{ order.status }}</span>{% endif %}
+          </td>
+          <td>{{ order.created_at.strftime('%Y-%m-%d') if order.created_at else '-' }}</td>
+          <td><a href="/admin/orders/{{ order.id }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);">لا توجد طلبات بعد</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+
+  - product-service/deployment.yaml
+  - product-service/service.yaml
+  - product-service/configmap.yaml
+  - product-service/secret.yaml
+  - product-service/hpa.yaml
+  - cart-service/deployment.yaml
+  - cart-service/service.yaml
+  - cart-service/configmap.yaml
+  - cart-service/secret.yaml
+  - cart-service/hpa.yaml
+  - inventory-service/deployment.yaml
+  - inventory-service/service.yaml
+  - inventory-service/configmap.yaml
+  - inventory-service/secret.yaml
+  - inventory-service/hpa.yaml
+  - order-service/deployment.yaml
+  - order-service/service.yaml
+  - order-service/configmap.yaml
+  - order-service/secret.yaml
+  - order-service/hpa.yaml
+  - admin-service/deployment.yaml
+  - admin-service/service.yaml
+  - admin-service/configmap.yaml
+  - admin-service/secret.yaml
+  - api-gateway/deployment.yaml
+  - api-gateway/service.yaml
+  - api-gateway/configmap.yaml
+  - notification-service/deployment.yaml
+  - notification-service/service.yaml
+  - notification-service/configmap.yaml
+  - notification-service/secret.yaml
+  - notification-service/hpa.yaml
+  - frontend/deployment.yaml
+  - frontend/service.yaml
+  - ingress/ingress.yaml

@@ -1,0 +1,26 @@
+{% extends 'admin/base.html' %}
+{% block title %}النشرة البريدية{% endblock %}
+{% block page_title %}مشتركو النشرة البريدية{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-envelope"></i> المشتركون ({{ subscribers|length }})</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>البريد الإلكتروني</th><th>تاريخ الاشتراك</th></tr></thead>
+      <tbody>
+        {% for s in subscribers %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ s.email }}</td>
+          <td>{{ s.subscribed_at.strftime('%Y-%m-%d') if s.subscribed_at else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:var(--muted);">لا يوجد مشتركون بعد</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

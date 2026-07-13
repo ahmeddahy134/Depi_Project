@@ -1,0 +1,69 @@
+{% extends 'admin/base.html' %}
+{% block title %}تفاصيل الطلب #{{ order.id }}{% endblock %}
+{% block page_title %}تفاصيل الطلب #{{ order.id }}{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-list"></i> المنتجات</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
+          <tbody>
+            {% for item in order.items %}
+            <tr>
+              <td>{{ item.product.name if item.product else item.product_id }}</td>
+              <td>{{ item.qty }}</td>
+              <td>{{ "%.2f"|format(item.unit_price) }} ج.م</td>
+              <td>{{ "%.2f"|format(item.qty * item.unit_price) }} ج.م</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr><td colspan="3" style="font-weight:bold;">الإجمالي</td><td style="font-weight:bold;color:#20c997;">{{ "%.2f"|format(order.total) }} ج.م</td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <div class="card-header"><span class="card-title"><i class="fas fa-info-circle"></i> معلومات الطلب</span></div>
+      <div class="form-group">
+        <div class="form-label">المستخدم</div>
+        <div>{{ order.user.name if order.user else 'مجهول' }}</div>
+        <div style="color:var(--muted);font-size:.85rem;">{{ order.user.email if order.user else '' }}</div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">التاريخ</div>
+        <div>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}</div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">الحالة الحالية</div>
+        <div>
+          {% if order.status == 'completed' %}<span class="badge badge-success">مكتمل</span>
+          {% elif order.status == 'pending' %}<span class="badge badge-warning">معلق</span>
+          {% elif order.status == 'cancelled' %}<span class="badge badge-danger">ملغي</span>
+          {% else %}<span class="badge badge-info">{{ order.status }}</span>{% endif %}
+        </div>
+      </div>
+      <form method="POST" action="/admin/orders/{{ order.id }}/status">
+        <div class="form-group">
+          <label class="form-label">تغيير الحالة</label>
+          <select name="status" class="form-control">
+            <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>معلق</option>
+            <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>جاري التجهيز</option>
+            <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>تم الشحن</option>
+            <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>مكتمل</option>
+            <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>ملغي</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fas fa-save"></i> حفظ الحالة</button>
+      </form>
+    </div>
+    <a href="/admin/orders" class="btn btn-outline" style="width:100%;justify-content:center;"><i class="fas fa-arrow-right"></i> رجوع للطلبات</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'admin/base.html' %}
+{% block title %}المنتجات{% endblock %}
+{% block page_title %}إدارة المنتجات{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-box"></i> المنتجات ({{ products.total }})</span>
+    <a href="/admin/products/add" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> منتج جديد</a>
+  </div>
+  <form class="search-bar" method="GET">
+    <input type="text" name="q" class="form-control" placeholder="ابحث عن منتج..." value="{{ q }}"/>
+    <button type="submit" class="btn btn-outline"><i class="fas fa-search"></i></button>
+  </form>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>الصورة</th><th>الاسم</th><th>السعر</th><th>الفئة</th><th>التقييم</th><th>الشارة</th><th>إجراءات</th></tr></thead>
+      <tbody>
+        {% for p in products.items %}
+        <tr>
+          <td><img src="{{ p.image }}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;" onerror="this.src='https://via.placeholder.com/50'"/></td>
+          <td>{{ p.name }}</td>
+          <td>{{ "%.2f"|format(p.price) }} ج.م</td>
+          <td>{{ p.category.name if p.category else '-' }}</td>
+          <td>{% for i in range(p.rating) %}⭐{% endfor %}</td>
+          <td>{% if p.badge %}<span class="badge badge-info">{{ p.badge }}</span>{% else %}-{% endif %}</td>
+          <td>
+            <a href="/admin/products/edit/{{ p.id }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
+            <form method="POST" action="/admin/products/delete/{{ p.id }}" style="display:inline;" onsubmit="return confirm('هل تريد حذف هذا المنتج؟')">
+              <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;color:var(--muted);">لا توجد منتجات</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <!-- Pagination -->
+  {% if products.pages > 1 %}
+  <div class="pagination">
+    {% for page in products.iter_pages() %}
+      {% if page %}
+        <a href="?page={{ page }}&q={{ q }}" class="page-link {% if page == products.page %}active{% endif %}">{{ page }}</a>
+      {% else %}
+        <span class="page-link">...</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

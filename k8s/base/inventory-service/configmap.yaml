@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inventory-service-config
+  namespace: ecom-dev
+data:
+  FLASK_ENV: "default"
+  FLASK_RUN_PORT: "5003"

@@ -1,0 +1,60 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ecom-ingress
+  namespace: ecom-dev
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+spec:
+  ingressClassName: alb
+  rules:
+    - host: api.shop.example.com
+      http:
+        paths:
+          # Paths below are the REAL registered prefixes, confirmed against
+          # each service's Flask blueprint during live dev testing — not
+          # guessed. The previous /api/v1/... paths matched no route in any
+          # service and 404'd on every single one.
+          - path: /api/products
+            pathType: Prefix
+            backend:
+              service: { name: product-service, port: { number: 80 } }
+          - path: /api/categories
+            pathType: Prefix
+            backend:
+              service: { name: product-service, port: { number: 80 } }
+          - path: /api/cart
+            pathType: Prefix
+            backend:
+              service: { name: cart-service, port: { number: 80 } }
+          - path: /api/inventory
+            pathType: Prefix
+            backend:
+              service: { name: inventory-service, port: { number: 80 } }
+          - path: /api/orders
+            pathType: Prefix
+            backend:
+              service: { name: order-service, port: { number: 80 } }
+          - path: /api/notifications
+            pathType: Prefix
+            backend:
+              service: { name: notification-service, port: { number: 80 } }
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: api-gateway, port: { number: 80 } }
+    - host: admin.shop.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: admin-service, port: { number: 80 } }
+    - host: shop.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: frontend, port: { number: 80 } }

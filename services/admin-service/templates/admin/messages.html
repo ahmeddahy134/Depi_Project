@@ -1,0 +1,29 @@
+{% extends 'admin/base.html' %}
+{% block title %}الرسائل{% endblock %}
+{% block page_title %}رسائل التواصل{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-comment"></i> الرسائل ({{ messages|length }})</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>الاسم</th><th>البريد</th><th>الموضوع</th><th>الرسالة</th><th>التاريخ</th></tr></thead>
+      <tbody>
+        {% for m in messages %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ m.name }}</td>
+          <td>{{ m.email }}</td>
+          <td>{{ m.subject or '-' }}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.message }}</td>
+          <td>{{ m.sent_at.strftime('%Y-%m-%d') if m.sent_at else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);">لا توجد رسائل</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
