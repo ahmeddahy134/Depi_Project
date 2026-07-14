@@ -43,7 +43,7 @@ jobs:
       - name: Deploy services (rolling update)
         run: |
           for svc in product-service cart-service inventory-service order-service notification-service admin-service api-gateway frontend; do
-            kubectl set image deployment/$svc $svc=<account_id>.dkr.ecr.us-east-1.amazonaws.com/$svc:${{ github.event.workflow_run.head_sha }} \
+            kubectl set image deployment/$svc $svc=291761344539.dkr.ecr.us-east-1.amazonaws.com/$svc:${{ github.event.workflow_run.head_sha }} \
               -n ${{ steps.target.outputs.namespace }} || true
             kubectl rollout status deployment/$svc -n ${{ steps.target.outputs.namespace }} --timeout=180s
           done
@@ -90,7 +90,7 @@ jobs:
         with:
           target: ${{ steps.url.outputs.target }}
           cmd_options: '-a'
-          fail_action: true    # fails the job on WARN/FAIL alerts — tune once a baseline is established
+          fail_action: true
 
       - name: Upload ZAP Report
         if: always()
