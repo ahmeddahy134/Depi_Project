@@ -42,8 +42,14 @@ jobs:
 
       - name: Deploy services (rolling update)
         run: |
+          # Use the SHA from the CI workflow
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          echo "Deploying with image tag: $SHA"
+          
           for svc in product-service cart-service inventory-service order-service notification-service admin-service api-gateway frontend; do
-            kubectl set image deployment/$svc $svc=291761344539.dkr.ecr.us-east-1.amazonaws.com/$svc:${{ github.event.workflow_run.head_sha }} \
+            echo "Updating $svc with image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/$svc:$SHA"
+            kubectl set image deployment/$svc \
+              $svc=291761344539.dkr.ecr.us-east-1.amazonaws.com/$svc:$SHA \
               -n ${{ steps.target.outputs.namespace }} || true
             kubectl rollout status deployment/$svc -n ${{ steps.target.outputs.namespace }} --timeout=180s
           done
