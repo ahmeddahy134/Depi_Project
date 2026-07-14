@@ -3,6 +3,11 @@ variable "environment" { type = string }
 variable "github_org" { type = string }
 variable "github_repo" { type = string }
 variable "oidc_provider_arn" { type = string }
+
+# Must be the EKS cluster's real OIDC ISSUER URL with the "https://" prefix
+# stripped (e.g. "oidc.eks.us-east-1.amazonaws.com/id/XXXXXXXX") — this is
+# module.eks.cluster_oidc_issuer_url from the eks module, NOT its API server
+# cluster_endpoint. Passing the wrong URL silently breaks IRSA trust matching.
 variable "oidc_provider_url" { type = string }
 
 data "aws_iam_policy_document" "github_actions_assume" {
@@ -64,6 +69,24 @@ data "aws_iam_policy_document" "lb_controller_assume" {
 resource "aws_iam_role" "lb_controller" {
   name               = "${var.project}-${var.environment}-lb-controller"
   assume_role_policy = data.aws_iam_policy_document.lb_controller_assume.json
+}
+
+# NOTE: previously this role had only a trust (assume-role) policy and no
+# permissions policy attached at all — the AWS Load Balancer Controller pod
+# would have authenticated fine via IRSA but every AWS API call (create ALB,
+# target groups, security group rules, etc.) would have failed with
+# AccessDenied, so the Ingress would never get an ADDRESS. This is the
+# official upstream policy for the controller (kubernetes-sigs/aws-load-balancer-controller,
+# docs/install/iam_policy.json), vendored locally so `terraform apply` doesn't
+# depend on internet access to GitHub at plan time.
+resource "aws_iam_policy" "lb_controller" {
+  name   = "${var.project}-${var.environment}-lb-controller-policy"
+  policy = file("${path.module}/alb_controller_iam_policy.json")
+}
+
+resource "aws_iam_role_policy_attachment" "lb_controller" {
+  role       = aws_iam_role.lb_controller.name
+  policy_arn = aws_iam_policy.lb_controller.arn
 }
 
 output "github_actions_role_arn" { value = aws_iam_role.github_actions.arn }

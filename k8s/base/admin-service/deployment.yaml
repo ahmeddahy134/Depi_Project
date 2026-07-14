@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: admin-service
-  namespace: ecom-prod
+  namespace: ecom-dev
 spec:
   replicas: 1
   selector:
@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: admin-service
-          image: <account_id>.dkr.ecr.us-east-1.amazonaws.com/admin-service:GIT_SHA
+          image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/admin-service:latest
           ports:
             - containerPort: 5010
           envFrom:

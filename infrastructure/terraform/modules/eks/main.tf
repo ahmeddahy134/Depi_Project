@@ -1,10 +1,22 @@
 variable "cluster_name" { type = string }
 variable "vpc_id" { type = string }
 variable "subnet_ids" { type = list(string) }
-variable "node_instance_type" {
-  type    = string
-  default = "t3.medium"
+
+# List (not a single string) so a fallback/spread of Free-Tier-eligible instance
+# types can be supplied without changing the interface later. Default is the
+# smallest generally-available Free Tier-eligible type; override per environment
+# via node_instance_types if the account's Free Tier / service-quota limits allow
+# a larger type.
+variable "node_instance_types" {
+  type    = list(string)
+  default = ["t3.micro"]
 }
+
+variable "node_disk_size" {
+  type    = number
+  default = 20
+}
+
 variable "node_desired_size" {
   type    = number
   default = 2
@@ -22,6 +34,17 @@ variable "cluster_version" {
   default = "1.30"
 }
 
+# Only needed when subnet_ids points at PUBLIC subnets (as in the no-NAT dev
+# environment) so worker nodes can actually reach the internet without a NAT
+# Gateway. Leave false (default) for private-subnet setups like prod, which
+# rely on a NAT Gateway instead. Explicit rather than relying on the subnet's
+# map_public_ip_on_launch default, since that default is not guaranteed to be
+# honored by every launch-template code path.
+variable "associate_public_ip" {
+  type    = bool
+  default = false
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
@@ -34,13 +57,30 @@ module "eks" {
 
   cluster_endpoint_public_access = true
 
+  # Without this, whoever runs `terraform apply` does NOT automatically get
+  # kubectl access — EKS access is entirely separate from "who created the
+  # cluster" by default. We hit this the hard way in dev: `kubectl get nodes`
+  # failed with "the server has asked for the client to provide credentials"
+  # right after a clean apply, and had to be fixed by hand via
+  # `aws eks create-access-entry` + `associate-access-policy`. Setting this
+  # true makes it automatic and reproducible instead.
+  enable_cluster_creator_admin_permissions = true
+
   eks_managed_node_groups = {
     default = {
-      instance_types = [var.node_instance_type]
+      instance_types = var.node_instance_types
+      disk_size      = var.node_disk_size
       min_size       = var.node_min_size
       max_size       = var.node_max_size
       desired_size   = var.node_desired_size
       capacity_type  = "ON_DEMAND"
+
+      network_interfaces = [
+        {
+          associate_public_ip_address = var.associate_public_ip
+          delete_on_termination       = true
+        }
+      ]
     }
   }
 
@@ -55,3 +95,14 @@ output "cluster_name" { value = module.eks.cluster_name }
 output "cluster_endpoint" { value = module.eks.cluster_endpoint }
 output "cluster_certificate_authority_data" { value = module.eks.cluster_certificate_authority_data }
 output "oidc_provider_arn" { value = module.eks.oidc_provider_arn }
+
+# The real OIDC issuer URL (https://oidc.eks.<region>.amazonaws.com/id/<id>) —
+# NOT the same as cluster_endpoint. Required for correctly scoping IRSA trust
+# policy conditions (see modules/iam).
+output "cluster_oidc_issuer_url" { value = module.eks.cluster_oidc_issuer_url }
+
+# Real AWS security group IDs (sg-xxxxxxxxxxxxxxxxx), safe to pass into any
+# module's allowed_security_group_ids input (e.g. rds, redis).
+output "node_security_group_id" { value = module.eks.node_security_group_id }
+output "cluster_security_group_id" { value = module.eks.cluster_security_group_id }
+output "cluster_primary_security_group_id" { value = module.eks.cluster_primary_security_group_id }

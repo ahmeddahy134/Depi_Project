@@ -37,13 +37,18 @@ jobs:
             echo "namespace=ecom-dev" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ${{ steps.target.outputs.cluster }} --region ${{ env.AWS_REGION }}
 
       - name: Deploy services (rolling update)
         run: |
+          REGISTRY=${{ steps.ecr-login.outputs.registry }}
           for svc in product-service cart-service inventory-service order-service notification-service admin-service api-gateway frontend; do
-            kubectl set image deployment/$svc $svc=<account_id>.dkr.ecr.us-east-1.amazonaws.com/$svc:${{ github.event.workflow_run.head_sha }} \
+            kubectl set image deployment/$svc $svc=$REGISTRY/$svc:${{ github.event.workflow_run.head_sha }} \
               -n ${{ steps.target.outputs.namespace }} || true
             kubectl rollout status deployment/$svc -n ${{ steps.target.outputs.namespace }} --timeout=180s
           done

@@ -14,7 +14,9 @@ resource "aws_wafv2_web_acl" "this" {
   rule {
     name     = "AWS-CoreRuleSet"
     priority = 1
-    override_action { none {} }
+    override_action {
+      none {}
+    }
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
@@ -31,7 +33,9 @@ resource "aws_wafv2_web_acl" "this" {
   rule {
     name     = "AWS-KnownBadInputs"
     priority = 2
-    override_action { none {} }
+    override_action {
+      none {}
+    }
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesKnownBadInputsRuleSet"
@@ -48,7 +52,9 @@ resource "aws_wafv2_web_acl" "this" {
   rule {
     name     = "AWS-SQLi"
     priority = 3
-    override_action { none {} }
+    override_action {
+      none {}
+    }
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesSQLiRuleSet"

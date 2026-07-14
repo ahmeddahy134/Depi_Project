@@ -8,7 +8,6 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REGISTRY: <account_id>.dkr.ecr.us-east-1.amazonaws.com
 
 jobs:
   lint-and-test:
@@ -213,7 +212,11 @@ jobs:
 
       - name: Tag & Push to ECR
         run: |
-          docker tag ${{ matrix.service }}:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:${{ github.sha }}
-          docker tag ${{ matrix.service }}:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:latest-${{ github.ref_name }}
-          docker push ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:${{ github.sha }}
-          docker push ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:latest-${{ github.ref_name }}
+          REGISTRY=${{ steps.ecr-login.outputs.registry }}
+          docker tag ${{ matrix.service }}:${{ github.sha }} $REGISTRY/${{ matrix.service }}:${{ github.sha }}
+          docker push $REGISTRY/${{ matrix.service }}:${{ github.sha }}
+          # NOTE: no floating "latest-<branch>" tag — the ECR repos are
+          # image_tag_mutability = IMMUTABLE (see modules/ecr), so re-pushing
+          # the same tag on the next commit would fail with
+          # ImageTagAlreadyExistsException. cd-deploy.yml always deploys by
+          # commit SHA, so a floating tag isn't needed anyway.

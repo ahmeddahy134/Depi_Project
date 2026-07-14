@@ -10,3 +10,57 @@ patches:
         value: 1
     target:
       kind: Deployment
+  - patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 1
+    target:
+      kind: HorizontalPodAutoscaler
+  # Lightweight footprint for a 2x t3.small dev cluster. All base Deployments
+  # define exactly one container (index 0), so this path is safe across every
+  # service; if a Deployment ever grows a second container this patch would
+  # need a matching second op.
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: "50m", memory: "64Mi" }
+          limits: { cpu: "250m", memory: "128Mi" }
+    target:
+      kind: Deployment
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: "50m", memory: "128Mi" }
+          limits: { cpu: "250m", memory: "300Mi" }
+    target:
+      kind: Deployment
+      name: cart-service
+  # admin-service's /health genuinely checks its DB connection (confirmed via
+  # live logs: clean gunicorn boot, then SIGTERM ~35s later when the httpGet
+  # probe's 3rd failure hits). Dev has no RDS by design, so /health always
+  # 500s here — swap to a TCP check that only confirms the process is up.
+  # Production keeps base's original httpGet probe: once a real RDS exists,
+  # that check is strictly more useful than this one and should stay.
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe
+        value:
+          tcpSocket: { port: 5010 }
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 3
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe
+        value:
+          tcpSocket: { port: 5010 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+    target:
+      kind: Deployment
+      name: admin-service

@@ -2,39 +2,51 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ecom-ingress
-  namespace: ecom-prod
+  namespace: ecom-dev
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
-    alb.ingress.kubernetes.io/ssl-redirect: '443'
 spec:
+  ingressClassName: alb
+  # Any request whose Host header doesn't match one of the rules below
+  # (e.g. hitting the ALB's raw IP or DNS name directly in a browser)
+  # falls through to the frontend, instead of ALB's built-in 404 fixed
+  # response. This is what makes "just open the ALB address" work without
+  # needing a hosts-file entry.
+  defaultBackend:
+    service:
+      name: frontend
+      port:
+        number: 80
   rules:
     - host: api.shop.example.com
       http:
         paths:
-          - path: /api/v1/products
+          # Paths below are the REAL registered prefixes, confirmed against
+          # each service's Flask blueprint during live dev testing — not
+          # guessed. The previous /api/v1/... paths matched no route in any
+          # service and 404'd on every single one.
+          - path: /api/products
             pathType: Prefix
             backend:
               service: { name: product-service, port: { number: 80 } }
-          - path: /api/v1/categories
+          - path: /api/categories
             pathType: Prefix
             backend:
               service: { name: product-service, port: { number: 80 } }
-          - path: /api/v1/cart
+          - path: /api/cart
             pathType: Prefix
             backend:
               service: { name: cart-service, port: { number: 80 } }
-          - path: /api/v1/inventory
+          - path: /api/inventory
             pathType: Prefix
             backend:
               service: { name: inventory-service, port: { number: 80 } }
-          - path: /api/v1/orders
+          - path: /api/orders
             pathType: Prefix
             backend:
               service: { name: order-service, port: { number: 80 } }
-          - path: /api/v1/notify
+          - path: /api/notifications
             pathType: Prefix
             backend:
               service: { name: notification-service, port: { number: 80 } }

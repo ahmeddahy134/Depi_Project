@@ -1,0 +1,694 @@
+apiVersion: v1
+data:
+  CART_SERVICE_URL: http://cart-service.ecom-prod.svc.cluster.local
+  INVENTORY_SERVICE_URL: http://inventory-service.ecom-prod.svc.cluster.local
+  NOTIFICATION_SERVICE_URL: http://notification-service.ecom-prod.svc.cluster.local
+  ORDER_SERVICE_URL: http://order-service.ecom-prod.svc.cluster.local
+  PORT: "8080"
+  PRODUCT_SERVICE_URL: http://product-service.ecom-prod.svc.cluster.local
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+  namespace: ecom-dev
+---
+apiVersion: v1
+data:
+  FLASK_ENV: production
+  FLASK_RUN_PORT: "5002"
+kind: ConfigMap
+metadata:
+  name: cart-service-config
+  namespace: ecom-dev
+---
+apiVersion: v1
+data:
+  FLASK_ENV: production
+  FLASK_RUN_PORT: "5003"
+kind: ConfigMap
+metadata:
+  name: inventory-service-config
+  namespace: ecom-dev
+---
+apiVersion: v1
+data:
+  FLASK_ENV: production
+  FLASK_RUN_PORT: "5005"
+kind: ConfigMap
+metadata:
+  name: notification-service-config
+  namespace: ecom-dev
+---
+apiVersion: v1
+data:
+  FLASK_ENV: production
+  FLASK_RUN_PORT: "5004"
+kind: ConfigMap
+metadata:
+  name: order-service-config
+  namespace: ecom-dev
+---
+apiVersion: v1
+data:
+  FLASK_ENV: production
+  FLASK_RUN_PORT: "5001"
+kind: ConfigMap
+metadata:
+  name: product-service-config
+  namespace: ecom-dev
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-service
+  namespace: ecom-dev
+spec:
+  ports:
+  - port: 80
+    targetPort: 5010
+  selector:
+    app: admin-service
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: ecom-dev
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: api-gateway
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart-service
+  namespace: ecom-dev
+spec:
+  ports:
+  - port: 80
+    targetPort: 5002
+  selector:
+    app: cart-service
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: ecom-dev
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: frontend
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  namespace: ecom-dev
+spec:
+  ports:
+  - port: 80
+    targetPort: 5003
+  selector:
+    app: inventory-service
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: ecom-dev
+spec:
+  ports:
+  - port: 80
+    targetPort: 5005
+  selector:
+    app: notification-service
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: ecom-dev
+spec:
+  ports:
+  - port: 80
+    targetPort: 5004
+  selector:
+    app: order-service
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: ecom-dev
+spec:
+  ports:
+  - port: 80
+    targetPort: 5001
+  selector:
+    app: product-service
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service
+  namespace: ecom-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-service
+  template:
+    metadata:
+      labels:
+        app: admin-service
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: admin-service-config
+        - secretRef:
+            name: admin-service-secrets
+        image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/admin-service:latest
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5010
+          initialDelaySeconds: 15
+        name: admin-service
+        ports:
+        - containerPort: 5010
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5010
+          initialDelaySeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: ecom-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: api-gateway-config
+        image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/api-gateway:latest
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+        name: api-gateway
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cart-service
+  name: cart-service
+  namespace: ecom-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cart-service
+  template:
+    metadata:
+      labels:
+        app: cart-service
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: cart-service-config
+        - secretRef:
+            name: cart-service-secrets
+        image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/cart-service:latest
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: cart-service
+        ports:
+        - containerPort: 5002
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: ecom-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+        name: frontend
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: inventory-service
+  name: inventory-service
+  namespace: ecom-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-service
+  template:
+    metadata:
+      labels:
+        app: inventory-service
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: inventory-service-config
+        - secretRef:
+            name: inventory-service-secrets
+        image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/inventory-service:latest
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5003
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: inventory-service
+        ports:
+        - containerPort: 5003
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5003
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: notification-service
+  name: notification-service
+  namespace: ecom-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: notification-service-config
+        - secretRef:
+            name: notification-service-secrets
+        image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/notification-service:latest
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5005
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: notification-service
+        ports:
+        - containerPort: 5005
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5005
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: order-service
+  name: order-service
+  namespace: ecom-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: order-service-config
+        - secretRef:
+            name: order-service-secrets
+        image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/order-service:latest
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5004
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: order-service
+        ports:
+        - containerPort: 5004
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5004
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: product-service
+  name: product-service
+  namespace: ecom-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: product-service-config
+        - secretRef:
+            name: product-service-secrets
+        image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/product-service:latest
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: product-service
+        ports:
+        - containerPort: 5001
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cart-service-hpa
+  namespace: ecom-dev
+spec:
+  maxReplicas: 8
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cart-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: inventory-service-hpa
+  namespace: ecom-dev
+spec:
+  maxReplicas: 6
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inventory-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service-hpa
+  namespace: ecom-dev
+spec:
+  maxReplicas: 4
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service-hpa
+  namespace: ecom-dev
+spec:
+  maxReplicas: 8
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: product-service-hpa
+  namespace: ecom-dev
+spec:
+  maxReplicas: 8
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: product-service
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/target-type: ip
+    kubernetes.io/ingress.class: alb
+  name: ecom-ingress
+  namespace: ecom-dev
+spec:
+  rules:
+  - host: api.shop.example.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: product-service
+            port:
+              number: 80
+        path: /api/v1/products
+        pathType: Prefix
+      - backend:
+          service:
+            name: product-service
+            port:
+              number: 80
+        path: /api/v1/categories
+        pathType: Prefix
+      - backend:
+          service:
+            name: cart-service
+            port:
+              number: 80
+        path: /api/v1/cart
+        pathType: Prefix
+      - backend:
+          service:
+            name: inventory-service
+            port:
+              number: 80
+        path: /api/v1/inventory
+        pathType: Prefix
+      - backend:
+          service:
+            name: order-service
+            port:
+              number: 80
+        path: /api/v1/orders
+        pathType: Prefix
+      - backend:
+          service:
+            name: notification-service
+            port:
+              number: 80
+        path: /api/v1/notify
+        pathType: Prefix
+      - backend:
+          service:
+            name: api-gateway
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  - host: admin.shop.example.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: admin-service
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  - host: shop.example.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
