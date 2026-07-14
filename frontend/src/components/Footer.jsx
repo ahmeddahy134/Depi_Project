@@ -21,7 +21,7 @@ const Footer = () => {
             <img src={logoUrl} alt="GlowCare" className="h-10 w-auto" />
             <p className="text-brand font-display text-xl font-medium mt-2">اشرقي بجمالك الطبيعي</p>
             <p className="text-muted leading-relaxed max-w-sm text-center md:text-right mt-2">
-              نحن نؤمن بأن الجمال الحقيقي ينبع من الطبيعة. نقدم لك أفضل منتجات العناية بالبشرة لبشرة نضرة ومشرقة.
+             hello 3amo dahy
             </p>
           </div>
 
