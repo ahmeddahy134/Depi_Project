@@ -44,10 +44,10 @@ jobs:
         run: |
           # Use the SHA from the CI workflow
           SHA="${{ github.event.workflow_run.head_sha }}"
-          echo "Deploying with image tag: $SHA"
+          echo "🚀 Deploying with image tag: $SHA"
           
           for svc in product-service cart-service inventory-service order-service notification-service admin-service api-gateway frontend; do
-            echo "Updating $svc with image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/$svc:$SHA"
+            echo "📦 Updating $svc with image: 291761344539.dkr.ecr.us-east-1.amazonaws.com/$svc:$SHA"
             kubectl set image deployment/$svc \
               $svc=291761344539.dkr.ecr.us-east-1.amazonaws.com/$svc:$SHA \
               -n ${{ steps.target.outputs.namespace }} || true
@@ -56,18 +56,22 @@ jobs:
 
       - name: Smoke Test
         run: |
+          echo "🔍 Running smoke tests..."
           for svc_path in product-service:5001 cart-service:5002 inventory-service:5003 order-service:5004 notification-service:5005; do
             svc=$(echo "$svc_path" | cut -d: -f1)
             kubectl run smoke-test-$svc --rm -i --restart=Never --image=curlimages/curl -n ${{ steps.target.outputs.namespace }} -- \
               curl -sf http://$svc.${{ steps.target.outputs.namespace }}.svc.cluster.local/health
           done
+          echo "✅ All smoke tests passed!"
 
       - name: Rollback on Failure
         if: failure()
         run: |
+          echo "⚠️ Rolling back deployments..."
           for svc in product-service cart-service inventory-service order-service notification-service admin-service api-gateway frontend; do
             kubectl rollout undo deployment/$svc -n ${{ steps.target.outputs.namespace }} || true
           done
+          echo "✅ Rollback completed"
 
   dast:
     name: DAST — OWASP ZAP Baseline Scan
